@@ -68,6 +68,8 @@ crowdsec_install:
 	install -m 644 $(GO_SRC_DIR)/config/acquis.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/acquis.yaml
 	install -m 644 $(GO_SRC_DIR)/config/profiles.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/profiles.yaml
 	install -m 644 $(GO_SRC_DIR)/config/simulation.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/simulation.yaml
+	install -m 644 $(GO_SRC_DIR)/config/console.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/console.yaml
+	install -m 644 $(GO_SRC_DIR)/config/context.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/context.yaml
 	install -m 644 $(GO_SRC_DIR)/config/local_api_credentials.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/local_api_credentials.yaml
 	install -m 644 $(GO_SRC_DIR)/config/online_api_credentials.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/online_api_credentials.yaml
 	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/scenarios
@@ -76,19 +78,17 @@ crowdsec_install:
 	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/patterns
 	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/hub
 	install -m 775 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/bouncers
-	cp -f $(GO_SRC_DIR)/config/patterns/* $(STAGING_INSTALL_PREFIX)/etc/crowdsec/patterns/
+	cp -rf $(GO_SRC_DIR)/config/patterns/* $(STAGING_INSTALL_PREFIX)/etc/crowdsec/patterns/
 	@$(MSG) "Copying plugins files"
 	install -m 755 -d $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins
-	install -m 551 $(GO_SRC_DIR)/plugins/notifications/slack/notification-slack $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
-	install -m 551 $(GO_SRC_DIR)/plugins/notifications/http/notification-http $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
-	install -m 551 $(GO_SRC_DIR)/plugins/notifications/splunk/notification-splunk $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
-	install -m 551 $(GO_SRC_DIR)/plugins/notifications/email/notification-email $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
-	install -m 775 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications
-	install -m 664 $(GO_SRC_DIR)/plugins/notifications/slack/slack.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications/slack.yaml
-	install -m 664 $(GO_SRC_DIR)/plugins/notifications/http/http.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications/http.yaml
-	install -m 664 $(GO_SRC_DIR)/plugins/notifications/splunk/splunk.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications/splunk.yaml
-	install -m 664 $(GO_SRC_DIR)/plugins/notifications/email/email.yaml $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications/email.yaml
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-slack/notification-slack $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-http/notification-http $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-splunk/notification-splunk $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-email/notification-email $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-file/notification-file $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-sentinel/notification-sentinel $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 551 $(GO_SRC_DIR)/cmd/notification-dummy/notification-dummy $(STAGING_INSTALL_PREFIX)/usr/lib/crowdsec/plugins/
+	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/notifications
 	@$(MSG) "Creating directories"
 	install -m 775 -d $(STAGING_INSTALL_PREFIX)/share/crowdsec
-	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/bouncers
 	install -m 755 -d $(STAGING_INSTALL_PREFIX)/etc/crowdsec/data
