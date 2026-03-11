@@ -50,6 +50,7 @@ ENV += BUILD_TIMESTAMP:=$(shell date +%F"_"%T)
 ENV += DEFAULT_CONFIGDIR=${DEFAULT_CONFIGPATH}
 ENV += DEFAULT_DATADIR=${DEFAULT_DATAPATH}
 ENV += BUILD_RE2_WASM=1
+ENV += GOFLAGS=-buildvcs=false
 
 crowdsec_compile:
 	$(RUN) $(MAKE) build
