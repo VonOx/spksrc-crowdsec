@@ -8,7 +8,7 @@
 
 SRCNAME = cs-firewall-bouncer
 PKG_NAME = crowdsec-firewall-bouncer
-PKG_VERS = 0.0.22
+PKG_VERS = 0.0.34
 PKG_REV = 1
 PKG_EXT = tar.gz
 PKG_DIST_NAME = $(PKG_NAME)-$(PKG_VERS).$(PKG_EXT)
