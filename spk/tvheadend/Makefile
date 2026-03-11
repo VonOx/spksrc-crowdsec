@@ -1,36 +1,25 @@
 SPK_NAME = tvheadend
 SPK_SHORT_VERS = 4.3
-SPK_GIT_HASH = b871020
-SPK_GIT_DATE = 20211121
+SPK_GIT_HASH = 58861264
+SPK_GIT_DATE = 20260108
 SPK_VERS = $(SPK_SHORT_VERS).$(SPK_GIT_DATE)
 TVH_VERS = $(SPK_SHORT_VERS)~$(SPK_GIT_HASH)
-SPK_REV = 31
+SPK_REV = 46
 SPK_ICON = src/tvheadend.png
 DSM_UI_DIR = app
 
-# Export version to the build where version
-# script gets patched accordingly by:
-# 000-fix-version.patch from cross/tvheadend
-export TVH_VERS
-
-SPK_DEPENDS = "python310"
-WHEELS = src/requirements-pure.txt
-
-DEPENDS = cross/$(SPK_NAME) cross/zap2epg cross/dtv-scan-tables
+FFMPEG_PACKAGE = ffmpeg7
+PYTHON_PACKAGE = python312
+SPK_DEPENDS = 'python312:$(FFMPEG_PACKAGE)'
 
 MAINTAINER = th0ma7
 DESCRIPTION = Tvheadend is a TV streaming server and recorder for Linux, FreeBSD and Android supporting DVB-S, DVB-S2, DVB-C, DVB-T, ATSC, ISDB-T, IPTV, SAT IP and HDHomeRun as input sources. Tvheadend offers HTTP, HTSP and SAT IP streaming.
 DESCRIPTION_FRE = Tvheadend est un serveur de streaming et enregistreur TV pour Linux, FreeBSD et Android prenant en charge DVB-S, DVB-S2, DVB-C, DVB-T, ATSC, ISDB-T, IPTV, SAT IP et HDHomeRun comme sources d\'entrée. Tvheadend offre le streaming HTTP, HTSP et SAT IP.
-RELOAD_UI = yes
 DISPLAY_NAME = Tvheadend
 STARTABLE = yes
-CHANGELOG = "1. Update to latest git version b871020 as of November 21th 2021<br/>2. Update openssl to 1.1l<br/>3. Updated to use FFMPEG 4.3.3<br/>4. Updated libhdhomerun to version 20210624<br/>5. Update to Python 3.10<br/>6. Update pngquant to version 2.17.0<br/>7. Update readline to version 8.1"
+CHANGELOG = "1. Update to latest git version 58861264 as of January 8th 2026<br/>2. Update to FFMPEG 7.1.3"
 HOMEPAGE = https://tvheadend.org/
 LICENSE = GPL v3
-
-# PPC archs except qoriq are not supported
-# https://tvheadend.org/issues/5060
-UNSUPPORTED_ARCHS = $(OLD_PPC_ARCHS)
 
 CONF_DIR = src/conf/
 
@@ -40,37 +29,40 @@ SERVICE_SETUP = src/service-setup.sh
 
 # Service configuration
 SERVICE_PORT = 9981
-SERVICE_PORT_TITLE = Tvheadend(HTTP)
+SERVICE_PORT_TITLE = Tvheadend (HTTP)
 
 # Admin link
 ADMIN_PORT = ${SERVICE_PORT}
 
-# Reuse ffmpeg libraries
-# Requires to invoke: make [package|publish] ARCH= TCVERSION=
-export FFMPEG_DIR = $(shell pwd)/../ffmpeg/work-$(ARCH)-$(TCVERSION)/install/var/packages/ffmpeg/target
+# PPC archs except qoriq are not supported
+#    https://tvheadend.org/issues/5060
+# ffmpeg-7 no longer support 88f6281 (armv5) and ffmpeg-7.1 hi3535 (armv7l)
+UNSUPPORTED_ARCHS = $(ARMv5_ARCHS) $(ARMv7L_ARCHS) $(OLD_PPC_ARCHS)
 
-ifneq ($(wildcard $(FFMPEG_DIR)),)
-PRE_DEPEND_TARGET = tvheadend_pre_depend
-SPK_DEPENDS := "$(SPK_DEPENDS):ffmpeg>4.3"
+DEPENDS = cross/tvheadend
+DEPENDS += cross/dtv-scan-tables
+DEPENDS += cross/docker-tvheadend
+DEPENDS += cross/zap2epg
+
+OPTIONAL_DEPENDS += python/numpy
+OPTIONAL_DEPENDS += python/pandas
+
+WHEELS += src/requirements-pure.txt
+
+include ../../mk/spksrc.common.mk
+
+# Optional gracenote2epg dependencies
+ifeq ($(call version_ge, $(TC_GCC), 8.5),1)
+# [numpy]
+DEPENDS += python/numpy
+
+# [pandas]
+DEPENDS += python/pandas
 endif
 
-include ../../mk/spksrc.spk.mk
+# Export version to the build where version
+# script gets patched accordingly by:
+# 000-fix-version.patch from cross/tvheadend
+export TVH_VERS
 
-.PHONY: tvheadend_pre_depend tvheadend_extra_install
-
-# Use FFMPEG package shared libraries
-FFMPEG_LIBS = libavfilter.pc libpostproc.pc libswresample.pc libavresample.pc libswscale.pc libavutil.pc libavformat.pc libavcodec.pc
-
-# Use other media libraries through FFMPEG package shared libraries
-MEDIA_LIBS = fdk-aac.pc numa.pc ogg.pc opus.pc theoradec.pc theoraenc.pc theora.pc vorbisenc.pc vorbisfile.pc vorbis.pc vpx.pc x264.pc x265.pc
-
-# Add Intel VAAPI libraries on Intel platforms
-ifeq ($(findstring $(ARCH),$(x64_ARCHS)),$(ARCH))
-VAAPI_LIBS = libdrm.pc libdrm_intel.pc libkms.pc libva.pc libva-drm.pc pciaccess.pc
-endif
-
-tvheadend_pre_depend:
-	mkdir -p $(STAGING_INSTALL_PREFIX)/lib/pkgconfig/
-	$(foreach lib,$(FFMPEG_LIBS),ln -sfT $(FFMPEG_DIR)/lib/pkgconfig/$(lib) $(STAGING_INSTALL_PREFIX)/lib/pkgconfig/$(lib) ;)
-	$(foreach lib,$(MEDIA_LIBS),ln -sfT $(FFMPEG_DIR)/lib/pkgconfig/$(lib) $(STAGING_INSTALL_PREFIX)/lib/pkgconfig/$(lib) ;)
-	$(foreach lib,$(VAAPI_LIBS),ln -sfT $(FFMPEG_DIR)/lib/pkgconfig/$(lib) $(STAGING_INSTALL_PREFIX)/lib/pkgconfig/$(lib) ;)
+include ../../mk/spksrc.python.mk

@@ -1,23 +1,52 @@
 ### Wheel rules
-#   Create wheels for modules listed in WHEELS. 
-#   If CROSS_COMPILE_WHEELS is set via python-cc.mk,
-#   wheels are cross-compiled. If not, pure-python 
-#   wheels are created.
-
+# Process wheels for modules listed in WHEELS. 
+#   1. wheel_download
+#   2. wheel_compile
+#   3. wheel_install
+#
 # Targets are executed in the following order:
 #  wheel_msg_target
 #  pre_wheel_target   (override with PRE_WHEEL_TARGET)
-#  build_wheel_target (override with WHEEL_TARGET)
+#  wheel_target (override with WHEEL_TARGET)
 #  post_wheel_target  (override with POST_WHEEL_TARGET)
 # Variables:
 #  WHEELS             List of wheels to go through
 
-WHEEL_COOKIE = $(WORK_DIR)/.$(COOKIE_PREFIX)wheel_done
+# When wheel is called from:
+#                  spksrc.spk.mk: MAKECMDGOALS is empty (needs to be set to wheel)
+# make wheel-<arch>-<tcversion> : MAKECMDGOALS is wheel
+#          make download-wheels : MAKECMDGOALS is download-wheels
+WHEEL_GOAL := $(if $(filter download-wheels,$(MAKECMDGOALS)),download-wheels,wheel)
+
+# Completion status file
+WHEEL_COOKIE = $(WORK_DIR)/.wheel_done
 
 ## python wheel specific configurations
 include ../../mk/spksrc.wheel-env.mk
 
+## python wheel specific configurations
+include ../../mk/spksrc.crossenv.mk
+
+## meson specific configurations
+include ../../mk/spksrc.cross-cmake-env.mk
+
+## meson specific configurations
+#include ../../mk/spksrc.cross-meson-env.mk
+
+include ../../mk/spksrc.wheel-download.mk
+
+wheel_compile: wheel_download
+include ../../mk/spksrc.wheel-compile.mk
+
+wheel_install: wheel_compile
+include ../../mk/spksrc.wheel-install.mk
+
 ##
+
+ifneq ($(and $(WHEEL_NAME),$(or $(WHEEL_VERSION),$(WHEEL_URL))),)
+download-wheels: wheel_download
+wheel: wheel_install
+else
 
 ifeq ($(strip $(PRE_WHEEL_TARGET)),)
 PRE_WHEEL_TARGET = pre_wheel_target
@@ -25,7 +54,7 @@ else
 $(PRE_WHEEL_TARGET): wheel_msg_target
 endif
 ifeq ($(strip $(WHEEL_TARGET)),)
-WHEEL_TARGET = build_wheel_target
+WHEEL_TARGET = wheel_target
 else
 $(WHEEL_TARGET): $(BUILD_WHEEL_TARGET)
 endif
@@ -35,100 +64,53 @@ else
 $(POST_WHEEL_TARGET): $(WHEEL_TARGET)
 endif
 
-
 wheel_msg_target:
-	@$(MSG) "Processing wheels of $(NAME)"
+	@$(MSG) "Processing wheel for $(NAME)"
 
-# PIP distributions caching requires that the user running it owns the cache directory.
-# PIP_CACHE_OPT is default "--cache-dir $(PIP_DIR)", PIP_DIR defaults to $(DISTRIB_DIR)/pip, so
-# will move if the user chooses a custom persistent distribution dir for caching downloads between
-# containers and builds.
 pre_wheel_target: wheel_msg_target
+
+wheel-%:
 ifneq ($(strip $(WHEELS)),)
-	@if [ -n "$(PIP_CACHE_OPT)" ] ; then \
-	   mkdir -p $(PIP_DIR) ; \
-	fi; \
-	mkdir -p $(WHEELHOUSE) ; \
-	for wheel in $(WHEELS) ; do \
-	   if [ -f $$wheel ] ; then \
-	      if [ $$(basename $$wheel) = $(WHEELS_PURE_PYTHON) ]; then \
-	         $(MSG) "Adding existing $$wheel file as pure-python (discarding any cross-compiled)" ; \
-	         sed -e '/^cross:\|^#\|^$$/d' -e /^pure:/s/^pure://g $$wheel  >> $(WHEELHOUSE)/$(WHEELS_PURE_PYTHON) ; \
-	      elif [ $$(basename $$wheel) = $(WHEELS_CROSSENV_COMPILE) ]; then \
-	         $(MSG) "Adding existing $$wheel file as cross-compiled (discarding any pure-python)" ; \
-	         sed -e '/^pure:\|^#\|^$$/d' -e /^cross:/s/^cross://g $$wheel >> $(WHEELHOUSE)/$(WHEELS_CROSSENV_COMPILE) ; \
-	      elif [ $$(basename $$wheel) = $(WHEELS_LIMITED_API) ]; then \
-	         $(MSG) "Adding existing $$wheel file as ABI-limited" ; \
-	         cat $$wheel >> $(WHEELHOUSE)/$(WHEELS_LIMITED_API) ; \
-	      else \
-	         $(MSG) "Adapting existing $$wheel file" ; \
-	         sed -rn /^pure:/s/^pure://gp $$wheel         >> $(WHEELHOUSE)/$(WHEELS_PURE_PYTHON) ; \
-	         sed -rn /^cross:/s/^cross://gp $$wheel       >> $(WHEELHOUSE)/$(WHEELS_CROSSENV_COMPILE) ; \
-	         sed -e '/^pure:\|^cross:\|^#\|^$$/d' $$wheel >> $(WHEELHOUSE)/$(WHEELS_DEFAULT_REQUIREMENT) ; \
-	      fi ;\
-	   else \
-	      $(MSG) "ERROR: File $$wheel does not exist" ; \
-	   fi ; \
-	done
+	@$(MSG) $(MAKE) ARCH=$(firstword $(subst -, ,$*)) TCVERSION=$(lastword $(subst -, ,$*)) WHEELS=\"$(WHEELS)\" wheel | tee --append $(WHEEL_LOG)
+	@MAKEFLAGS= $(MAKE) ARCH=$(firstword $(subst -, ,$*)) TCVERSION=$(lastword $(subst -, ,$*)) WHEELS="$(WHEELS)" wheel --no-print-directory || false
+else
+	$(error No python wheel to process)
 endif
 
-# Build cross compiled wheels first, to fail fast.
-# There might be an issue with some pure python wheels when built after that.
-build_wheel_target: SHELL:=/bin/bash
-build_wheel_target: $(PRE_WHEEL_TARGET)
-ifneq ($(strip $(WHEELS)),)
-	$(foreach e,$(shell cat $(WORK_DIR)/python-cc.mk),$(eval $(e)))
-	@$(MSG) "Cross-compiling wheels" ; \
-	localPIP=$(PIP) ; \
-	if [ -s "$(CROSSENV)" ] ; then \
-	   $(MSG) "Python crossenv found: [$(CROSSENV)]" ; \
-	   . $(CROSSENV) ; \
-	   localPIP=$(PIP_CROSSENV) ; \
-	fi ; \
-	while IFS= read -r requirement ; do \
-	   wheel=$${requirement#*:} ; \
-	   file=$$(basename $${requirement%%:*}) ; \
-	   [ "$${file}" = "$(WHEELS_LIMITED_API)" ] && abi3="--build-option=--py-limited-api=$(PYTHON_LIMITED_API)" || abi3="" ; \
-	   [ "$$(grep -s egg <<< $${wheel})" ] && name=$${wheel#*egg=} || name=$${wheel%%[<>=]=*} ; \
-	   options=($$(echo $(WHEELS_BUILD_ARGS) | sed -e 's/ \[/\n\[/g' | grep -i $${name} | cut -f2 -d] | xargs)) ; \
-	   [ "$${options}" ] && global_option=$$(printf "\x2D\x2Dglobal-option=%s " "$${options[@]}") || global_option="" ; \
-	   localCFLAGS=($$(echo $(WHEELS_CFLAGS) | sed -e 's/ \[/\n\[/g' | grep -i $${name} | cut -f2 -d] | xargs)) ; \
-	   localLDFLAGS=($$(echo $(WHEELS_LDFLAGS) | sed -e 's/ \[/\n\[/g' | grep -i $${name} | cut -f2 -d] | xargs)) ; \
-	   localCPPFLAGS=($$(echo $(WHEELS_CPPFLAGS) | sed -e 's/ \[/\n\[/g' | grep -i $${name} | cut -f2 -d] | xargs)) ; \
-	   localCXXFLAGS=($$(echo $(WHEELS_CXXFLAGS) | sed -e 's/ \[/\n\[/g' | grep -i $${name} | cut -f2 -d] | xargs)) ; \
-	   $(MSG) [$${name}] $$([ "$${localCFLAGS[@]}" ] && echo "CFLAGS=$${localCFLAGS[@]} ")$$([ "$${localLDFLAGS[@]}" ] && echo "LDFLAGS=$${localLDFLAGS[@]} ")$$([ "$${localCPPFLAGS[@]}" ] && echo "CPPFLAGS=$${localCPPFLAGS[@]} ")$$([ "$${localCXXFLAGS[@]}" ] && echo "CXXFLAGS=$${localCXXFLAGS[@]} ")$$([ "$${abi3}" ] && echo "$${abi3} ")"$${global_option}" ; \
-	   $(RUN) \
-	      _PYTHON_HOST_PLATFORM="$(TC_TARGET)" \
-	      CFLAGS="$(CFLAGS) -I$(STAGING_INSTALL_PREFIX)/$(PYTHON_INC_DIR) $${localCFLAGS[@]}" \
-	      LDFLAGS="$(LDFLAGS) $${localLDFLAGS[@]}" \
-	      CPPFLAGS="$(CPPFLAGS) $${localCPPFLAGS[@]}" \
-	      CXXFLAGS="$(CXXFLAGS) $${localCXXFLAGS[@]}" \
-	      $${localPIP} \
-	      $(PIP_WHEEL_ARGS) \
-	      $${abi3} \
-	      $${global_option} \
-	      --no-build-isolation \
-	      $${wheel} || exit 1 ; \
-	done < <(grep -svH  -e "^\#" -e "^\$$" $(WHEELHOUSE)/$(WHEELS_CROSSENV_COMPILE) $(WHEELHOUSE)/$(WHEELS_LIMITED_API))
-ifneq ($(filter 1 ON TRUE,$(WHEELS_PURE_PYTHON_PACKAGING_ENABLE)),)
-	@if [ -s "$(WHEELHOUSE)/$(WHEELS_PURE_PYTHON)" ]; then \
-	   $(MSG) "Force pure-python" ; \
-	   export LD= LDSHARED= CPP= NM= CC= AS= RANLIB= CXX= AR= STRIP= OBJDUMP= READELF= CFLAGS= CPPFLAGS= CXXFLAGS= LDFLAGS= && $(RUN) \
-	      $(PIP) \
-	      $(PIP_WHEEL_ARGS) \
-	      --requirement $(WHEELHOUSE)/$(WHEELS_PURE_PYTHON) ; \
-	fi
-endif
-endif
+# 1) Loop over direct requirements in $(WHEELS)
+# 2) Loop over each requirement files in $(WHEELS)
+wheel_target: SHELL:=/bin/bash
+wheel_target: pre_wheel_target
+	@set -e ; \
+	for requirement in $(filter-out $(addprefix src/,$(notdir $(wildcard $(abspath $(addprefix $(WORK_DIR)/../,$(WHEELS)))))),$(WHEELS)) ; do \
+	   $(MSG) $(MAKE) ARCH=$(ARCH) TCVERSION=$(TCVERSION) REQUIREMENT=\"$${requirement}\" REQUIREMENT_GOAL=\"$(WHEEL_GOAL)\" requirement ; \
+	   MAKEFLAGS= $(MAKE) ARCH="$(ARCH)" TCVERSION="$(TCVERSION)" REQUIREMENT="$${requirement}" REQUIREMENT_GOAL="$(WHEEL_GOAL)" requirement --no-print-directory || false ; \
+	done ; \
+	for requirement in $(wildcard $(abspath $(addprefix $(WORK_DIR)/../,$(WHEELS)))) ; do \
+	   $(MSG) $(MAKE) ARCH=$(ARCH) TCVERSION=$(TCVERSION) REQUIREMENT=\"$${requirement}\" REQUIREMENT_GOAL=\"$(WHEEL_GOAL)\" requirement ; \
+	   MAKEFLAGS= $(MAKE) ARCH="$(ARCH)" TCVERSION="$(TCVERSION)" REQUIREMENT="$${requirement}" REQUIREMENT_GOAL="$(WHEEL_GOAL)" requirement --no-print-directory || false ; \
+	done
+
+download-wheels: $(WHEEL_TARGET)
 
 post_wheel_target: $(WHEEL_TARGET) install_python_wheel
 
 ifeq ($(wildcard $(WHEEL_COOKIE)),)
 wheel: $(WHEEL_COOKIE)
 
+# If WHEELS is empty then skip processing and
+# mark as completed using status cookie
+ifeq ($(strip $(WHEELS)),)
+$(WHEEL_COOKIE):
+else
 $(WHEEL_COOKIE): $(POST_WHEEL_TARGET)
+endif
 	$(create_target_dir)
 	@touch -f $@
+
 else
 wheel: ;
+endif
+
+# endif $(and $(WHEEL_NAME),$(or (WHEEL_VERISON),$(WHEEL_URL))) non-empty
 endif

@@ -1,5 +1,5 @@
 PKG_NAME = python310
-PKG_VERS = 3.10.2
+PKG_VERS = 3.10.19
 PKG_EXT = tar.xz
 PKG_DIST_NAME = Python-$(PKG_VERS).$(PKG_EXT)
 PKG_DIST_SITE = https://www.python.org/ftp/python/$(PKG_VERS)
@@ -11,10 +11,13 @@ LICENSE  = PSF
 
 GNU_CONFIGURE = 1
 CONFIGURE_ARGS  = --enable-ipv6
-CONFIGURE_ARGS += --without-ensurepip
-# old gcc does not know -Wno-unused-result
-# without this setting, cross compile wheels for ppc853x-5.2 will fail
-CONFIGURE_ARGS += ac_cv_disable_unused_result_warning=no
+CONFIGURE_ARGS += --without-static-libpython
+# installed pip is not on PATH
+CONFIGURE_ARGS += --with-ensurepip=no
+# test modules are required for optimization only
+CONFIGURE_ARGS += --disable-test-modules
+# Uses system default libssl-dev
+CONFIGURE_ARGS += --with-ssl-default-suites=openssl
 
 COMPILE_MAKE_OPTIONS += all
 
@@ -26,14 +29,21 @@ PYTHON = $(WORK_DIR)/install/usr/local/bin/python3
 PIP = $(WORK_DIR)/install/usr/local/bin/pip
 PIP_NATIVE = $(WORK_DIR)/../../../native/$(PKG_NAME)/work-native/install/usr/local/bin/pip
 
+REQUIREMENTS = src/requirements.txt
+PIP_WHEEL = $(shell grep -h -E "(^pip|^)[<>=]=" $(wildcard $(REQUIREMENTS)))
+
 .PHONY: python310_native_post_install
 python310_native_post_install: $(WORK_DIR)/python-native.mk
-	@$(MSG) Installing pip, setuptools and crossenv
 	@$(RUN) wget https://bootstrap.pypa.io/get-pip.py
-	@$(RUN) $(PYTHON) get-pip.py "pip==21.3.1"
-	@$(PIP) install "setuptools==60.7.1"
-	@$(PIP) install "crossenv==1.2.0"
-	@$(PIP) install "cffi==1.15"
+ifeq ($(PIP_WHEEL),)
+	@$(MSG) Installing latest pip
+	@$(RUN) $(PYTHON) get-pip.py --no-setuptools --no-wheel --disable-pip-version-check
+else
+	@$(MSG) Installing $(PIP_WHEEL)
+	@$(RUN) $(PYTHON) get-pip.py "$(PIP_WHEEL)" --no-setuptools --no-wheel --disable-pip-version-check
+endif
+	@$(MSG) Installing wheels from requirements file
+	@$(PIP) --disable-pip-version-check install -r $(REQUIREMENTS)
 
 $(WORK_DIR)/python-native.mk:
 	@echo PIP=$(PIP_NATIVE) >> $@

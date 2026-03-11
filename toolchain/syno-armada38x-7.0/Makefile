@@ -1,8 +1,6 @@
 TC_ARCH = armada38x
 TC_VERS = 7.0
-TC_BUILD = 41890
 TC_KERNEL = 3.10.108
-TC_GCC = 7.5.0
 TC_GLIBC = 2.26
 
 TC_DIST = armada38x-gcc750_glibc226_hard-GPL
@@ -14,4 +12,4 @@ TC_SYSROOT = $(TC_TARGET)/sysroot
 # ensure gnu/hard-float.h is used
 TC_EXTRA_CFLAGS = -D__ARM_PCS_VFP=1
 
-include ../../mk/spksrc.tc.mk
+include ../../mk/spksrc.toolchain.mk

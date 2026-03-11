@@ -1,6 +1,7 @@
 PKG_NAME = minio
-PKG_VERS = 2022-02-01T18-00-14Z
+PKG_VERS = 2022-10-24T18-35-07Z
 PKG_RELEASE_TAG = $(subst :,-,$(PKG_VERS))
+PKG_COMMIT_ID = fc6c7949727ec261cd57fbdb02fa7575d0fd8e61
 PKG_EXT = tar.gz
 PKG_DIST_PREFIX = RELEASE.$(PKG_RELEASE_TAG)
 PKG_DIST_NAME = $(PKG_DIST_PREFIX).$(PKG_EXT)
@@ -9,7 +10,15 @@ PKG_DIST_FILE = $(PKG_NAME)-$(PKG_DIST_NAME)
 EXTRACT_PATH = $(WORK_DIR)/src/github.com/$(PKG_NAME)
 PKG_DIR = $(PKG_NAME)-$(PKG_DIST_PREFIX)
 
+UNSUPPORTED_ARCHS = $(PPC_ARCHS)
+include ../../mk/spksrc.common.mk
+ifeq ($(findstring $(ARCH),$(ARMv5_ARCHS)),$(ARCH))
+BUILD_DEPENDS = native/go_1.23
+NATIVE_GO = native/go_1.23
+else
 BUILD_DEPENDS = native/go
+NATIVE_GO = native/go
+endif
 
 HOMEPAGE = https://min.io/
 COMMENT  = MinIO is a high performance object storage server compatible with Amazon S3 APIs.
@@ -22,11 +31,14 @@ GO_BIN_DIR = $(GO_SRC_DIR)/$(PKG_NAME)
 
 ENV += GO111MODULE=on
 
-GO_BUILD_ARGS = -tags kqueue
+GO_BUILD_ARGS = -tags kqueue -buildvcs=false
 
 GO_LDFLAGS  = -s -w
 GO_LDFLAGS += -X github.com/minio/minio/cmd.Version=$(PKG_VERS)
 GO_LDFLAGS += -X github.com/minio/minio/cmd.ReleaseTag=$(PKG_RELEASE_TAG)
+GO_LDFLAGS += -X github.com/minio/minio/cmd.CommitID=$(PKG_COMMIT_ID)
+GO_LDFLAGS += -X github.com/minio/minio/cmd.ShortCommitID=$(shell echo $(PKG_COMMIT_ID) | cut -c1-12)
+GO_LDFLAGS += -X github.com/minio/minio/cmd.CopyrightYear=$(firstword $(subst -, ,$(PKG_VERS)))
 
 include ../../mk/spksrc.cross-go.mk
 
