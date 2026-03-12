@@ -30,6 +30,7 @@ STARTABLE = yes
 
 DEPENDS  = cross/$(SPK_NAME)
 ##DEPENDS += cross/ipset
+DEPENDS += cross/ipset-kernel
 
 ##SPK_DEPENDS = "crowdsec"
 OPTIONAL_DEPENDS = "crowdsec"
