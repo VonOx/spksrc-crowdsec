@@ -12,7 +12,7 @@ PKG_VERS = 7.15
 PKG_REV = 1
 PKG_EXT = tar.bz2
 PKG_DIST_NAME = $(SRCNAME)-$(PKG_VERS).$(PKG_EXT)
-PKG_DIST_SITE = https://ipset.netfilter.org
+PKG_DIST_SITE = https://ipset.netfilter.org/$(PKG_DIST_NAME)
 PKG_DIR =  $(SRCNAME)-$(PKG_VERS)
 
 DEPENDS = cross/libmnl
