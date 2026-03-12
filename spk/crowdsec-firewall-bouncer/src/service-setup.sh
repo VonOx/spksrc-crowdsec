@@ -4,7 +4,7 @@
 # Copyright (C) 2021-2022 CrowdSec <crowdsec@crowdsec.net>
 #
 
-PATH="${SYNOPKG_PKGDEST}/sbin:${SYNOPKG_PKGDEST}/usr/sbin:${PATH}"
+PATH="${SYNOPKG_PKGDEST}/sbin:${SYNOPKG_PKGDEST}/usr/sbin:/opt/sbin:/opt/bin:${PATH}"
 
 # Package
 PACKAGE="crowdsec-firewall-bouncer"
