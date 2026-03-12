@@ -216,14 +216,11 @@ service_postupgrade ()
 
 load_ipset ()
 {
-	unload_ipset
-	echo "INFO: loading ipset kernel modules from ${MODULES_DIR}"
-	/sbin/insmod /lib/modules/nfnetlink.ko
-	/sbin/insmod "${MODULES_DIR}/kernel/net/netfilter/ipset/ip_set.ko"
-	/sbin/insmod "${MODULES_DIR}/kernel/net/netfilter/ipset/ip_set_hash_net.ko"
-	/sbin/insmod "${MODULES_DIR}/kernel/net/netfilter/xt_set.ko"
-	if [[ $(/sbin/lsmod | grep ip_set_hash_net) ]]; then
-		echo "INFO: ipset kernel modules loaded…"
+	echo "INFO: loading ipset kernel modules"
+	modprobe ip_set
+	modprobe ip_set_hash_ip
+	if lsmod | grep -q ip_set_hash_ip; then
+		echo "INFO: ipset kernel modules loaded"
 	else
 		echo "ERROR: loading ipset kernel modules!"
 	fi
@@ -231,16 +228,10 @@ load_ipset ()
 
 unload_ipset ()
 {
-	echo "INFO: unloading ipset kernel modules…"
-	/sbin/rmmod ip_set_hash_net --syslog
-	/sbin/rmmod xt_set --syslog
-	/sbin/rmmod ip_set --syslog
-	/sbin/rmmod nfnetlink --syslog
-	if [[ ! $(/sbin/lsmod | grep ip_set) ]]; then
-		echo "INFO: ipset kernel modules unloaded…"
-	else
-		echo "ERROR: unloading ipset kernel modules!"
-	fi
+	echo "INFO: unloading ipset kernel modules"
+	rmmod ip_set_hash_ip 2>/dev/null || true
+	rmmod xt_set 2>/dev/null || true
+	rmmod ip_set 2>/dev/null || true
 }
 
 service_prestart ()
