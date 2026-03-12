@@ -26,6 +26,7 @@ LICENSE  = MIT
 GNU_CONFIGURE = 1
 
 REQUIRE_KERNEL = 1
+REQUIRE_KERNEL_MODULE = CONFIG_IP_SET:net/netfilter/ipset:ip_set
 
 CONFIGURE_ARGS += --with-kbuild=$(KERNEL_ROOT)
 CONFIGURE_ARGS += --with-ksource=$(KERNEL_ROOT)
