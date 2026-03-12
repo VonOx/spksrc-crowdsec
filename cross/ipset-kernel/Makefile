@@ -8,10 +8,10 @@
 
 SRCNAME = ipset
 PKG_NAME = ipset-kernel
-PKG_VERS = 7.15
-PKG_REV = 2
+PKG_VERS = 7.24
+PKG_REV = 1
 PKG_EXT = tar.bz2
-PKG_DIST_NAME = $(SRCNAME)-$(PKG_VERS)
+PKG_DIST_NAME = $(SRCNAME)-$(PKG_VERS).$(PKG_EXT)
 PKG_DIST_SITE = https://ipset.netfilter.org
 PKG_DIST_FILE = $(SRCNAME)-$(PKG_VERS).$(PKG_EXT)
 PKG_DIR =  $(SRCNAME)-$(PKG_VERS)
