@@ -32,6 +32,10 @@ CWD_INSTALL_DIR="${CROWDSEC_PKGDEST}/target"
 CROWDSEC_TMPDIR="${CROWDSEC_PKGDEST}/tmp"
 CROWDSEC_VARDIR="${CROWDSEC_PKGDEST}/var"
 
+# Docker
+# Workaround for Docker API version negotiation
+export DOCKER_API_VERSION=1.43
+
 # Binaries
 CROWDSEC="${CWD_INSTALL_DIR}/usr/sbin/crowdsec"
 CSCLI="${CWD_INSTALL_DIR}/usr/sbin/cscli"
