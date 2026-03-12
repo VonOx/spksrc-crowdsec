@@ -25,10 +25,10 @@ LICENSE  = MIT
 
 GNU_CONFIGURE = 1
 
-##REQUIRE_KERNEL = 1
+REQUIRE_KERNEL = 1
 
-CONFIGURE_ARGS += --with-kbuild=no
-CONFIGURE_ARGS += --with-ksource=no
+CONFIGURE_ARGS += --with-kbuild=$(KERNEL_ROOT)
+CONFIGURE_ARGS += --with-ksource=$(KERNEL_ROOT)
 CONFIGURE_ARGS += --enable-settype-modules=no
 CONFIGURE_ARGS += --with-gnu-ld=yes
 
