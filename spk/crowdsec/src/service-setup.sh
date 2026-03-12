@@ -146,12 +146,15 @@ service_prepare ()
 
 		sed -i "s,^\(\s*profiles_path\s*:\s*\).*\$,\1${CONFIGDIR}/profiles.yaml," "${CFG_FILE}"
 		sed -i "s,^\(\s*console_path\s*:\s*\).*\$,\1${CONFIGDIR}/console.yaml," "${CFG_FILE}"
+		sed -i "s,^\(\s*user\s*:\s*\)nobody.*\$,\1crowdsec," "${CFG_FILE}"
+		sed -i "s,^\(\s*group\s*:\s*\)nogroup.*\$,\1sc-crowdsec," "${CFG_FILE}"
 
 		sed -e "s,credentials_path: /etc/crowdsec/local_api_credentials.yaml,credentials_path: ${LOCALAPI},g" -i "${CFG_FILE}"
 		sed -e "s,credentials_path: /etc/crowdsec/online_api_credentials.yaml,credentials_path: ${ONLINEAPI},g" -i "${CFG_FILE}"
 
 		sed -i "s,^\(\s*listen_uri\s*:\s*\).*\$,\1${LAPI_URL}:${LAPI_PORT}," "${CFG_FILE}"
 		sed -i "s,^\(\s*url\s*:\s*\).*\$,\1http://${LAPI_URL}:${LAPI_PORT}," "${LOCALAPI}"
+
 	fi
 
 	if grep -q "login:" "${LOCALAPI}"; then
