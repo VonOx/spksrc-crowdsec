@@ -149,7 +149,8 @@ init_config() {
 		sed -i "s,^\(\s*pid_dir\s*:\s*\).*\$,\1${CROWDSEC_TMPDIR}/run," "${CSFB_CUSTOMCONFIG}"
 		sed -i "s,^\(\s*log_dir\s*:\s*\).*\$,\1${CROWDSEC_TMPDIR}/log," "${CSFB_CUSTOMCONFIG}"
 		sed -i "s,^\(\s*api_url\s*:\s*\).*\$,\1http://${LAPI_URL}:${LAPI_PORT}/," "${CSFB_CUSTOMCONFIG}"
-
+		sed -i "s,^\(\s*iptables_add_rule_comments\s*:\s*\).*\$,\1false," "${CSFB_CUSTOMCONFIG}"
+		
 		## Gen&ConfigApiKey
 		GenConfigApiKey
 	fi

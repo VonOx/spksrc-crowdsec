@@ -13,7 +13,9 @@ SPK_ICON = src/$(SPK_NAME).png
 
 DISPLAY_NAME = CrowdSec-Firewall-Bouncer
 DESCRIPTION = Crowdsec-Firewall-Bouncer will fetch new and old decisions from a CrowdSec API to add them in a blocklist used by supported firewalls.
-CHANGELOG = "1. Initial package for DSM7\n2. add ipset tool\n3. add ipset kernel modules\n3. add ipset tool\n3. DSM6 compatibility mode added\n4. First relase\n5. Fix Copyright"
+CHANGELOG = "0.0.34-1: Update to cs-firewall-bouncer 0.0.34, use system ipset via opkg"
+
+SUPPORTED_ARCHS = x64-7.1 aarch64-7.1 armv7-7.1
 
 THIRDPARTY = "yes"
 HOMEPAGE = "https://www.crowdsec.net"
@@ -58,14 +60,7 @@ STRIP_TARGET		= nop
 POST_STRIP_TARGET	= nop
 
 SPK_USR_LOCAL_LINKS  = bin:usr/sbin/crowdsec-firewall-bouncer
-SPK_USR_LOCAL_LINKS += lib:lib/libmnl.so
-SPK_USR_LOCAL_LINKS += lib:lib/libmnl.so.0
-SPK_USR_LOCAL_LINKS += lib:lib/libmnl.so.0.2.0
-SPK_USR_LOCAL_LINKS += bin:sbin/ipset
-SPK_USR_LOCAL_LINKS += bin:sbin/ipset-translate
-SPK_USR_LOCAL_LINKS += lib:lib/modules
 
 SPK_COMMANDS  = usr/sbin/crowdsec-firewall-bouncer
-SPK_COMMANDS += sbin/ipset
 
 include ../../mk/spksrc.spk.mk
