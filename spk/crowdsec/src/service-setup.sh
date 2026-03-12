@@ -146,7 +146,7 @@ service_prepare ()
 
 		sed -i "s,^\(\s*profiles_path\s*:\s*\).*\$,\1${CONFIGDIR}/profiles.yaml," "${CFG_FILE}"
 		sed -i "s,^\(\s*console_path\s*:\s*\).*\$,\1${CONFIGDIR}/console.yaml," "${CFG_FILE}"
-		sed -i "s,^\(\s*user\s*:\s*\)nobody.*\$,\1crowdsec," "${CFG_FILE}"
+		sed -i "s,^\(\s*user\s*:\s*\)nobody.*\$,\1sc-crowdsec," "${CFG_FILE}"
 		sed -i "s,^\(\s*group\s*:\s*\)nogroup.*\$,\1sc-crowdsec," "${CFG_FILE}"
 
 		sed -e "s,credentials_path: /etc/crowdsec/local_api_credentials.yaml,credentials_path: ${LOCALAPI},g" -i "${CFG_FILE}"
@@ -200,10 +200,10 @@ fix_runas_root ()
 
 service_postinst ()
 {
+	fix_runas_root
 #	if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then	# Create data dir & permissions if needed
 		service_prepare
 #	fi
-	fix_runas_root
 	patch_nginx
 }
 

@@ -8,7 +8,7 @@
 
 PKG_NAME = crowdsec
 PKG_VERS = 1.7.6
-PKG_REV = 1
+PKG_REV = 2
 PKG_EXT = tar.gz
 PKG_DIST_NAME = $(PKG_NAME)-$(PKG_VERS).$(PKG_EXT)
 PKG_DIST_SITE = https://codeload.github.com/crowdsecurity/crowdsec/tar.gz/v$(PKG_VERS)?
