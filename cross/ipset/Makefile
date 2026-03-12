@@ -25,12 +25,10 @@ LICENSE  = MIT
 
 GNU_CONFIGURE = 1
 
-REQUIRE_KERNEL = 1
+##REQUIRE_KERNEL = 1
 
-##CONFIGURE_ARGS += --host=$(TC_TARGET)
-CONFIGURE_ARGS += --with-kbuild=$(KERNEL_ROOT)
-CONFIGURE_ARGS += --with-ksource=$(KERNEL_ROOT)
-##CONFIGURE_ARGS += --includedir=$(KERNEL_ROOT)/arch/$(ARCH)/include
+##CONFIGURE_ARGS += --with-kbuild=$(KERNEL_ROOT)
+##CONFIGURE_ARGS += --with-ksource=$(KERNEL_ROOT)
 CONFIGURE_ARGS += --enable-settype-modules=no
 CONFIGURE_ARGS += --with-gnu-ld=yes
 
